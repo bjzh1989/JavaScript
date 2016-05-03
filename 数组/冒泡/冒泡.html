@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title></title>
+</head>
+<body>
+<script>
+    var ary=[12,4,15,9,3];
+/*    for(var i=0;i<ary.length-1;i++){
+        for(var j=0;j<ary.length-1-i;j++){
+            var c=null;
+            if(ary[j+1]<ary[j]){
+                c=ary[j];
+                ary[j]=ary[j+1];
+                ary[j+1]=c;
+            }
+        }
+    }
+    console.log(ary);*/
+/*    for(var i=0;i<ary.length-1;i++){
+        if(ary[i]>ary[i+1]){
+            var c=null;
+            c=ary[i];
+            ary[i]=ary[i+1];
+            ary[i+1]=c;
+        }
+    }
+    for(var i=0;i<ary.length-1-1;i++){
+        if(ary[i]>ary[i+1]){
+            var c=null;
+            c=ary[i];
+            ary[i]=ary[i+1];
+            ary[i+1]=c;
+        }
+    }
+    for(var i=0;i<ary.length-1-1-1;i++){
+        if(ary[i]>ary[i+1]){
+            var c=null;
+            c=ary[i];
+            ary[i]=ary[i+1];
+            ary[i+1]=c;
+        }
+    }
+    for(var i=0;i<ary.length-1-1-1-1;i++){
+        if(ary[i]>ary[i+1]){
+            var c=null;
+            c=ary[i];
+            ary[i]=ary[i+1];
+            ary[i+1]=c;
+        }
+    }*/
+    for(var i=0;i<ary.length-1;i++){//两两比较，循环length-1次；
+        for(var j=0;j<ary.length-1-i;j++){
+            /*外循环一次，里面比较length-1-i轮
+            (也就是说里面的比较次数递减，第一次比较length-1-0次，
+            每轮比较把最大的值排到最后，外循环第二次时，里面比较不再和最后的最大值相比，
+            所以第二次length-1-1....每次里面比较减少次数（0,1,2..）
+            正好是外循环次数的值，所以直接减i就可以了）*/
+            var c=null;
+            if(ary[j]>ary[j+1]){
+                c=ary[j];
+                ary[j]=ary[j+1];
+                ary[j+1]=c;
+            }
+        }
+    }
+    console.log(ary)
+</script>
+</body>
+</html>

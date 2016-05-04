@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+</head>
+<body>
+变量作用域
+变量的作用域是指一个变量在程序中的哪些地方可以访问。JavaScript 中的变量作用域被
+定义为函数作用域。这是指变量的值在定义该变量的函数内是可见的，并且定义在该函数内的嵌套函数中也可访问该变量。
+在主程序中，如果在函数外定义一个变量，那么该变量拥有全局作用域，这是指可以在包
+括函数体内的程序的任何部分访问该变量。下面用一段简短的程序展示全局作用域的工作
+原理：
+<script>
+    function showScope() {
+        return scope;
+    }
+    var scope = "global";
+    console.log(scope); // 显示 "global"
+    console.log(showScope()); // 显示 "global"
+    //函数 showScope() 可以访问变量 scope ，因为 scope 是一个全局变量。可以在程序的任意位
+    //置定义全局变量，比如在函数定义前或者函数定义后。
+</script>
+<script>
+    //在 showScope() 函数内再定义一个 scope 变量，看看这时发生了什么：
+    function showScope() {
+        var scope = "local";
+        return scope;
+    }
+    var scope = "global";
+    console.log(scope); // 显示 "global"
+    console.log(showScope()); // 显示 "local"
+    //showScope() 函数内定义的变量 scope 拥有局部作用域，而在主程序中定义的变量 scope 是
+    //一个全局变量。尽管两个变量名字相同，但它们的作用域不同，在定义它们的地方访问时
+    //得到的值也不一样。
+</script>
+这些行为都是正常且符合预期的。但是，如果在定义变量时省略了关键字 var ，那么一切
+都变了。JavaScript 允许在定义变量时不使用关键字 var ，但这样做的后果是定义的变量自
+动拥有了全局作用域，即使你是在一个函数内定义该变量，它也是全局变量。
+<script>
+    //例 1-11 展示了定义变量时省略了关键字 var 的后果。
+    //例 1-11　滥用全局变量的恶果
+    function showScope() {
+        scope = "local";
+        return scope;
+    }
+    scope = "global";
+    console.log(scope); // 显示 "global"
+    console.log(showScope()); // 显示 "local"
+    console.log(scope); // 显示 "local"
+
+    //在例 1-11 中，由于在 showScope() 函数内定义变量 scope 时省略了关键字 var ，所以在将
+    //字符串 "local" 赋给该变量时，实际上是改变了主程序中 scope 变量的值。因此，在定义
+    //变量时，应该总是以关键字 var 开始，以避免发生类似的错误。
+</script>
+前面我们提到，JavaScript 拥有的是函数作用域，其含义是 JavaScript 中没有块级作用域，
+这一点有别于其他很多现代编程语言。使用块级作用域，可以在一段代码块中定义变量，
+该变量只在块内可见，离开这段代码块就不可见了，在 C++ 或者 Java 的 for 循环语句中，
+经常可以看到这样的例子：
+for (int i = 1; i <= 10; ++i) {
+cout << "Hello, world!" << endl;
+}
+虽然 JavaScript 没有块级作用域，但在本书中编写 for 循环语句时，我们假设它有：
+for (var i = 1; i <= 10; ++i ) {
+print("Hello, world!");
+}
+这样做的原因是，我们不希望自己成为你养成坏编程习惯的帮手。
+</body>
+</html>

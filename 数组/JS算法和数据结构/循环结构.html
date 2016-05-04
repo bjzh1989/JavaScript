@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+</head>
+<body>
+
+<!--循环结构-->
+<!--两种循环结构为while循环和for循环。-->
+<!--如果希望在条件为真时执行一组语句，就选择 while 循环。-->
+<!--如果希望按执行次数执行一组语句，就选择 for 循环。-->
+<script>
+    //例 1-6　 while 循环
+    var number = 1;
+    var sum = 0;
+    while (number < 11) {
+        sum += number;
+        ++number;
+    }
+    console.log(sum); // 显示 55
+</script>
+<script>
+    //例 1-7　使用 for 循环求和
+    var number = 1;
+    var sum = 0;
+    for (var number = 1; number < 11; number++) {
+        sum += number;
+    }
+    console.log(sum); // 显示 55
+</script>
+<script>
+    //例 1-8　使用 for 循环访问数组
+    var numbers = [3, 7, 12, 22, 100];
+    var sum = 0;
+    for (var i = 0; i < numbers.length; ++i) {
+        sum += numbers[i];
+    }
+    console.log(sum); // 显示 144
+</script>
+
+
+
+
+
+
+</body>
+</html>

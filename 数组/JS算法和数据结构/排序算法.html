@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+</head>
+<body>
+对计算机中存储的数据执行的两种最常见操作是排序和检索，自从计算机产业伊始便是如
+此。这也意味着排序和检索在计算机科学中是被研究得最多的操作。本书讨论的许多数据
+结构，都对排序和查找算法进行了专门的设计，以使对其中的数据进行操作时更简洁高效。
+本章将介绍数据排序的基本算法和高级算法。这些算法都只依赖数组来存储数据。我们还
+将一起看看几种计算程序运行时间的方法，以便确定哪种算法效率最高。
+12.1　数组测试平台
+本章将从开发一个数组测试平台开始，它将辅助我们完成基本排序算法的研究。我们将创
+建一个数组类和一些封装了常规数组操作的函数：插入新数据，显示数组数据及调用不同
+的排序算法。这个类还包含了一个 swap() 函数，用于交换数组元素。
+<script>
+    //例 12-1 展示了这个类的代码。
+    //例 12-1　数组测试平台类
+    function CArray(numElements) {
+        this.dataStore = [];
+        this.pos = 0;
+        this.numElements = numElements;
+        this.insert = insert;
+        this.toString = toString;
+        this.clear = clear;
+        this.setData = setData;
+        this.swap = swap;
+        for ( var i = 0; i < numElements; ++i ) {
+            this.dataStore[i] = i;
+        }
+    }
+    function setData() {
+        for ( var i = 0; i < this.numElements; ++i ) {
+            this.dataStore[i] = Math.floor(Math.random() * (this.numElements + 1));
+        }
+    }
+    function clear() {
+        for ( var i = 0; i < this.dataStore.length; ++i ) {
+            this.dataStore[i] = 0;
+        }
+    }
+    function insert(element) {
+        this.dataStore[this.pos++] = element;
+    }
+    function toString() {
+        var restr = "";
+        for ( var i = 0; i < this.dataStore.length; ++i ) {
+            retstr += this.dataStore[i] + " ";
+            if (i > 0 & i % 10 == 0) {
+                retstr += "\n";
+            }
+        }
+        return retstr;
+    }
+    function swap(arr, index1, index2) {
+        var temp = arr[index1];
+        arr[index1] = arr[index2];
+        arr[index2] = temp;
+    }
+</script>
+下面这个简单的程序演示如何使用 CArray 类（之所以叫 CArray 是因为 JavaScript 本身已经
+有 Array 类了）：
+<script>
+   // 例 12-2　使用测试平台类
+    var numElements = 100;
+    var myNums = new CArray(numElements);
+    myNums.setData();
+    print(myNums.toString());
+//    以上代码输出的结果为：
+//    76 69 64 4 64 73 47 34 65 93 32
+//    59 4 92 84 55 30 52 64 38 74
+//    40 68 71 25 84 5 57 7 6 40
+//    45 69 34 73 87 63 15 96 91 96
+//    88 24 58 78 18 97 22 48 6 45
+//    68 65 40 50 31 80 7 39 72 84
+//    72 22 66 84 14 58 11 42 7 72
+//    87 39 79 18 18 9 84 18 45 50
+//    43 90 87 62 65 97 97 21 96 39
+//    7 79 68 35 39 89 43 86 5
+</script>
+生成随机数据
+你会注意到 setData() 函数生成了存储在数组中的随机数字。 Math 类的 random() 函数会生
+成 [0, 1) 区间内的随机数字。换句话说， random() 函数生成的随机数字大于等于 0，但不
+会等于 1。这样生成的随机数字并不是非常有用，因此我们将随机数字乘以我们想要的元
+素然后加 1，最后再用 Math 类的 floor() 函数确定最终结果。正如上面的输出所示，这个
+公式可以成功地生成 1~100 的随机数字集合。
+12.2　基本排序算法
+接下来要介绍的基本排序算法其核心思想是指对一组数据按照一定的顺序重新排列。重新
+排列时用到的技术是一组嵌套的 for 循环。其中外循环会遍历数组的每一项，内循环则用
+于比较元素。这些算法非常逼真地模拟了人类在现实生活中对数据的排序，例如纸牌玩家
+在处理手中的牌时对纸牌进行排序，或者教师按照字母顺序或者分数对试卷进行排序。
+12.2.1　冒泡排序
+我们先来了解一下冒泡排序算法，它是最慢的排序算法之一，但也是一种最容易实现的排
+序算法。
+之所以叫冒泡排序是因为使用这种排序算法排序时，数据值会像气泡一样从数组的一端漂
+浮到另一端。假设正在将一组数字按照升序排列，较大的值会浮动到数组的右侧，而较小
+的值则会浮动到数组的左侧。之所以会产生这种现象是因为算法会多次在数组中移动，比
+较相邻的数据，当左侧值大于右侧值时将它们进行互换。
+这里有一个简单的冒泡排序的例子。我们从下面的列表开始：
+E A D B H
+经过第一次排序后，这个列表变成：
+A E D B H
+前两个元素进行了互换。接下来再次排序又会变成：
+A D E B H
+第二个和第三个元素进行了互换。继续进行排序：
+A D B E H
+第三个和第四个元素进行了互换。最后，第二个和第三个元素还会再次互换，得到最终
+顺序：
+A B D E H
+例 12-3 展示了冒泡排序的代码。
+<script>
+    //例 12-3　 bubbleSort() 函数
+    function bubbleSort() {
+        var numElements = this.dataStore.length;
+        var temp;
+        for ( var outer = numElements; outer >= 2; --outer) {
+            for ( var inner = 0; inner <= outer - 1; ++inner ) {
+                if (this.dataStore[inner] > this.dataStore[inner + 1]) {
+                    swap(this.dataStore, inner, inner + 1);
+                }
+            }
+        }
+    }
+    //请确保在 CArray 构造函数中添加对这个函数的调用。
+</script>
+<script>
+    //例 12-4 这个小程序演示了如何使用
+    //bubbleSort() 函数对 10 个数字进行排序。
+    //例 12-4　使用 bubbleSort() 对 10 个数字排序
+    var numElements = 10;
+    var mynums = new CArray(numElements);
+    mynums.setData();
+    print(mynums.toString());
+    mynums.bubbleSort();
+    print();
+    print(mynums.toString());
+//    以上代码输出为：
+//    10 8 3 2 2 4 9 5 4 3
+//    2 2 3 3 4 4 5 8 9 10
+//    我们可以看到，这个冒泡排序算法正常运行了，但最好能够看到这个算法的执行过程，因
+//    为看到排序的过程对我们理解这个算法是如何工作的很有帮助。
+</script>
+<script>
+//    我们只要在 bubbleSort()
+//    函数中小心地加入 toString() 函数，就可以看到这个数组在排序过程中的当前状态（参见
+//    例 12-5）。
+//    例 12-5　在 bubbleSort() 函数中添加对 toString() 函数的调用
+    function bubbleSort() {
+        var numElements = this.dataStore.length;
+        var temp;
+        for (var outer = numElmeents; outer >= 2; --outer) {
+            for (var inner = 0; inner <= outer - 1; ++inner) {
+                if (this.dataStore[inner] > this.dataStore[inner + 1]) {
+                    swap(this.dataStore, inner, inner + 1);
+                }
+            }
+            print(this.toString());
+        }
+    }
+//    当我们重新执行上述这段包含了 toString() 函数的程序时，会得到以下输出结果：
+//    1 0 3 3 5 4 5 0 6 7
+//    0 1 3 3 4 5 0 5 6 7
+//    0 1 3 3 4 0 5 5 6 7
+//    0 1 3 3 0 4 5 5 6 7
+//    0 1 3 0 3 4 5 5 6 7
+//    0 1 0 3 3 4 5 5 6 7
+//    0 0 1 3 3 4 5 5 6 7
+//    0 0 1 3 3 4 5 5 6 7
+//    0 0 1 3 3 4 5 5 6 7
+//    0 0 1 3 3 4 5 5 6 7
+//    0 0 1 3 3 4 5 5 6 7
+//    通过这个输出结果，我们可以更加容易地看出小的值是如何移到数组开头的，大的值又是
+//    如何移到数组末尾的。
+
+</script>
+12.2.2　选择排序
+我们接下来要看的是选择排序算法。选择排序从数组的开头开始，将第一个元素和其他元
+素进行比较。检查完所有元素后，最小的元素会被放到数组的第一个位置，然后算法会从
+第二个位置继续。这个过程一直进行，当进行到数组的倒数第二个位置时，所有的数据便
+完成了排序。
+选择排序会用到嵌套循环。外循环从数组的第一个元素移动到倒数第二个元素；内循环从第
+二个数组元素移动到最后一个元素，查找比当前外循环所指向的元素小的元素。每次内循环
+迭代后，数组中最小的值都会被赋值到合适的位置。图 12-2 展示了选择排序算法的原理。
+以下是一个对只有五个元素的列表进行选择排序的简单例子。初始列表为：
+E A D H B
+第一次排序会找到最小值，并将它和列表的第一个元素进行互换。
+A E D H B
+接下来查找第一个元素后面的最小值（第一个元素此时已经就位），并对它们进行互换：
+A B D H E
+D 也已经就位，因此下一步会对 E 和 H 进行互换，列表已按顺序排好：
+A B D E H
+图 12-2 展示了如何对更大的数据集合进行选择排序。
+<script>
+    //例 12-6 展示了 selectionSort() 函数的代码。
+    //例 12-6　 selectionSort() 函数
+    function selectionSort() {
+        var min, temp;
+        for (var outer = 0; outer <= this.dataStore.length-2; ++outer) {
+            min = outer;
+            for (var inner = outer + 1;
+                 inner <= this.dataStore.length-1; ++iner) {
+                if (this.dataStore[inner] < this.dataStore[min]) {
+                    min = inner;
+                }
+                swap(this.dataStore, outer, min);
+            }
+        }
+    }
+</script>
+将下面这行添加到 swap 之后，就可以看到选择排序函数运行后的输出结果：
+print(this.toString());
+6 8 0 6 7 4 3 1 5 10
+0 8 6 6 7 4 3 1 5 10
+0 1 6 6 7 4 3 8 5 10
+0 1 3 6 7 4 6 8 5 10
+0 1 3 4 7 6 6 8 5 10
+0 1 3 4 5 6 6 8 7 10
+0 1 3 4 5 6 6 8 7 10
+0 1 3 4 5 6 6 8 7 10
+0 1 3 4 5 6 6 7 8 10
+0 1 3 4 5 6 6 7 8 10
+0 1 3 4 5 6 6 7 8 10
+12.2.3　插入排序
+插入排序类似于人类按数字或字母顺序对数据进行排序。例如，让班里的每个学生上交一
+张写有他的名字、学生证号以及个人简介的索引卡片。学生交上来的卡片是没有顺序的，
+但是我想让这些卡片按字母顺序排好，这样就可以很容易地与班级花名册进行对照了。
+我将卡片带回办公室，清理好书桌，然后拿起第一张卡片。卡片上的姓氏是 Smith 。我把
+它放到桌子的左上角，然后再拿起第二张卡片。这张卡片上的姓氏是 Brown 。我把 Smith
+移右，把 Brown 放到 Smith 的前面。下一张卡片是 Williams ，可以把它放到桌面最右边，
+而不用移动其他任何卡片。下一张卡片是 Acklin 。这张卡片必须放在这些卡片的最前面，
+因此其他所有卡片必须向右移动一个位置来为 Acklin 这张卡片腾出位置。这就是插入排序
+的排序原理。
+插入排序有两个循环。外循环将数组元素挨个移动，而内循环则对外循环中选中的元素及
+它后面的那个元素进行比较。如果外循环中选中的元素比内循环中选中的元素小，那么数
+组元素会向右移动，为内循环中的这个元素腾出位置，就像之前介绍的姓氏卡片一样。
+例 12-7 展示了插入排序的代码。
+<script>
+   // 例 12-7　 insertionSort() 函数
+    function insertionSort() {
+        var temp, inner;
+        for (var outer = 1; outer <= this.dataStore.length - 1; ++outer) {
+            temp = this.dataStore[outer];
+            inner = outer;
+            while (inner > 0 && (this.dataStore[inner - 1] >= temp)) {
+                this.dataStore[inner] = this.dataStore[inner - 1];
+                --inner;
+            }
+            this.dataStore[inner] = temp;
+        }
+    }
+</script>
+现在在一个数据集合上执行我们的程序，来看看插入排序是如何运行的：
+6 10 0 6 5 8 7 4 2 7
+0 6 10 6 5 8 7 4 2 7
+0 6 6 10 5 8 7 4 2 7
+0 5 6 6 10 8 7 4 2 7
+0 5 6 6 8 10 7 4 2 7
+0 5 6 6 7 8 10 4 2 7
+0 4 5 6 6 7 8 10 2 7
+0 2 4 5 6 6 7 8 10 7
+0 2 4 5 6 6 7 7 8 10
+0 2 4 5 6 6 7 7 8 10
+这段输出结果清楚地显示了插入排序的运行并非通过数据交换，而是通过将较大的数组元
+素移动到右侧，为数组左侧的较小元素腾出位置。
+12.2.4　基本排序算法的计时比较
+这三种排序算法的复杂度非常相似，从理论上来说，它们的执行效率也应该差不多。要确
+定这三种算法的性能差异，我们可以使用一个非正式的计时系统来比较它们对数据集合进
+行排序所花费的时间。能够对算法进行计时非常重要，因为，对 100 个或 1000 个元素进
+行排序时，你看不出这些排序算法的差异。但是如果对上百万个元素进行排序，这些排序
+算法之间可能存在巨大的不同。
+本节用到的计时系统基于 JavaScript  Date 对象的 getTime() 函数来取得系统时间。这个函
+数的运行方式如下所示：
+var start = new Date().getTime();
+getTime() 函数返回的是系统时间，以毫秒为单位。参见如下代码片段：
+var start = new Date().getTime();
+print(start);
+以上代码的输出结果为：
+135154872720
+要记录代码执行的时间，首先启动计时器，执行代码，然后在代码执行结束时停止计时
+器。计时器停止时记录的时间与计时器启动时记录的时间之差就是排序所花费的时间。例
+12-8 演示了如何为一个显示 1~100 之间数字的 for 循环计时：
+<script>
+//    例 12-8　 for 循环计时
+                var start = new Date().getTime();
+    for (var i = 1; i < 100; ++i) {
+        print(i);
+    }
+    var stop = new Date().getTime();
+    var elapsed = stop - start;
+    print(" 消耗的时间为：" + elapsed +" 毫秒。");
+</script>
+以上代码输出的结果不包含计时器启动时的时间和计时器停止时的时间，这段程序的计时
+结果为：
+消耗的时间为：91 毫秒。
+既然我们已经有了度量排序算法效率的工具，那我们就来做一些测试，对它们进行比较：
+为了比较基本排序算法，我们将在数组大小分别为 100、1000 和 10 000 时对这三种排序算
+法计时。我们预期在数据大小为 100 和 1000 的情况下看不出这些算法的差异，但是在数
+据大小为 10 000 时可以看到。
+先准备一个包含 100 个随机整数的数组。我们会准备一个函数，为每个算法创建一个新的
+数据集合。例 12-9 展示了这个函数的代码。
+<script>
+    //例 12-9　为排序函数计时（它对长度为 100 的数组进行排序）
+    var numElements = 100;
+    var nums = new CArray(numElements);
+    nums.setData();
+    var start = new Date().getTime();
+    nums.bubbleSort();
+    var stop = new Date().getTime();
+    var elapsed = stop - start;
+    print(" 对 " + numElements + " 个元素执行冒泡排序消耗的时间为：" +
+            elapsed + " 毫秒。");
+    start = new Date().getTime();
+    nums.selectionSort();
+    stop = new Date().getTime();
+    elapsed = stop - start;
+    print(" 对 " + numElements + " 个元素执行选择排序消耗的时间为：" +
+            elapsed + " 毫秒。");
+    start = new Date().getTime();
+    nums.insertionSort();
+    stop = new Date().getTime();
+    elapsed = stop - start;
+    print(" 对 " + numElements + " 个元素执行插入排序消耗的时间为：" +
+            elapsed + " 毫秒。");
+//    以下是运行的结果（运行在 Intel 2.4 GHz 处理器机器上的结果）：
+//    对 100 个元素执行冒泡排序消耗的时间为：0 毫秒。
+//    对 100 个元素执行选择排序消耗的时间为：1 毫秒。
+//    对 100 个元素执行插入排序消耗的时间为：0 毫秒。
+//    很明显，这三种算法之间的并没有显著的差异。
+</script>
+接下来，我们将 numElements 变量调整到 1000 后得到的结果为：
+对 1000 个元素执行冒泡排序消耗的时间为：12 毫秒。
+对 1000 个元素执行选择排序消耗的时间为：7 毫秒。
+对 1000 个元素执行插入排序消耗的时间为：6 毫秒。
+对 1000 个数字来说，选择排序和插入排序差不多要比冒泡排序快两倍。
+最后，我们将测试 10 000 个数字：
+对 10000 个元素执行冒泡排序消耗的时间为：1096 毫秒。
+对 10000 个元素执行选择排序消耗的时间为：591 毫秒。
+对 10000 个元素执行插入排序消耗的时间为：471 毫秒。
+10 000 个数字的测试结果与 1000 个数字的测试结果一致。选择排序和插入排序要比冒泡
+排序快，插入排序是这三种算法中最快的。不过要记住，这些测试必须经过多次的运行，
+最后得到的结果才可被视为是有效的统计。
+12.3　高级排序算法
+这一节将讨论更多高级数据排序算法。它们通常被认为是处理大型数据集的最高效排序算
+法，它们处理的数据集可以达到上百万个元素，而不仅仅是几百个或者几千个。这一节将
+介绍的算法包括快速排序、希尔排序、归并排序和堆排序。我们会讨论每个算法的实现，
+并通过运行计时测试来比较它们的效率。
+12.3.1　希尔排序
+首先要学习的第一个高级排序算法是希尔排序。希尔排序是以它的创造者（Donald Shell）
+命名的。这个算法在插入排序的基础上做了很大的改善。希尔排序的核心理念与插入排序
+不同，它会首先比较距离较远的元素，而非相邻的元素。和简单地比较相邻元素相比，使
+用这种方案可以使离正确位置很远的元素更快地回到合适的位置。当开始用这个算法遍历
+数据集时，所有元素之间的距离会不断减小，直到处理到数据集的末尾，这时算法比较的
+就是相邻元素了。
+希尔排序的工作原理是，通过定义一个间隔序列来表示在排序过程中进行比较的元素之
+间有多远的间隔。我们可以动态定义间隔序列，不过对于大部分的实际应用场景，算法
+要用到的间隔序列可以提前定义好。有一些公开定义的间隔序列，使用它们会得到不同
+的结果。在这里我们用到了 Marcin Ciura 在他 2001 年发表的论文“Best Increments for the
+Average Case of Shell Sort”（http:bit.ly/1b04YFv,2001）中定义的间隔序列。这个间隔序列
+是： 701, 301, 132, 57, 23, 10, 4, 1 。在用它进行日常编码之前，我们先通过一个小的
+数据集合来看看这个算法是怎么运行的。
+图 12-3 演示了在希尔排序中间隔序列是如何运行的。
+<script>
+    //我们先来看下希尔排序算法的代码：
+    function shellsort() {
+        for (var g = 0; g < this.gaps.length; ++g) {
+            for (var i = this.gaps[g]; i < this.dataStore.length; ++i) {
+                var temp = this.dataStore[i];
+                for (var j = i; j >= this.gaps[g] &&
+                this.dataStore[j-this.gaps[g]] > temp;
+                     j -= this.gaps[g]) {
+                    this.dataStore[j] = this.dataStore[j - this.gaps[g]];
+                }
+                this.dataStore[j] = temp;
+            }
+        }
+    }
+</script>
+为了能让这个程序在 CArray 类测试平台中运行，我们需要在这个类的定义里增加一个对间
+隔序列的定义。请将下面代码添加到 CArray 的构造函数中：
+this.gaps = [5,3,1];
+然后在代码中添加一个函数：
+function setGaps(arr) {
+this.gaps = arr;
+}
+最后，在 CArray 构造函数中添加 shellsort() 代码及对 shellsort() 函数的引用。
+外循环控制间隔序列的移动。也就是说，算法在第一次处理数据集时，会检查所有间隔为
+5 的元素。下一次遍历会检查所有间隔为 3 的元素。最后一次则会对间隔为 1 的元素，也
+就是相邻元素执行标准插入排序。在开始做最后一次处理时，大部分元素都将在正确的位
+置，算法就不必对很多元素进行交换。这就是希尔排序比插入排序更高效的地方。图 12-3
+演示了如何使用间隔序列为 5, 3, 1 的希尔排序算法，对一个包含 10 个随机数字的数据集
+合进行排序。
+现在通过实例来看看这个算法是如何运行的。我们在 shellsort() 中添加一个 print() 语
+句来跟踪这个算法的执行过程。每一个间隔，以及该间隔的排序结果都会被打印出来。例
+12-10 展示了这个程序。
+<script>
+    //例 12-10　对小数据集合执行希尔排序
+    load("CArray.js")
+    var nums = new CArray(10);
+    nums.setData();
+    print(" 希尔排序前：\n");
+    print(nums.toString());
+    print("\n 希尔排序中：\n");
+    nums.shellsort();
+    print("\n 希尔排序后：\n");
+    print(nums.toString());
+</script>
+以上代码输出的结果为：
+希尔排序前：
+6 0 2 9 3 5 8 0 5 4
+希尔排序中：
+5 0 0 5 3 6 8 2 9 4 // 间隔 5
+4 0 0 5 2 6 5 3 9 8 // 间隔 3
+0 0 2 3 4 5 5 6 8 9 // 间隔 1
+希尔排序后：
+0 0 2 3 4 5 5 6 8 9
+要理解希尔排序是如何运行的，可以对比数组的初始状态和执行完间隔序列为 5 的排序后
+的状态。初始状态时的第一个元素 6，和它后面的第 5 个元素 5，进行了互换，因为 5 < 6。
+现在我们来比较 gap 5 和 gap 3 这两行。在 gap 5 这行中的数字 3 和数字 2 进行了互换，
+因为 2 < 3，并且 2 是 3 后面的第 3 个元素。从循环中当前元素所在位置往后数，简单地数
+到第 gap 个数的位置，然后比较这个位置和当前元素所在位置上的两个数字，就可以对希
+尔排序过程中的任何步骤进行跟踪。
+现在我们来详细看一下希尔排序是如何运行的，我们对一个更大的数据集合（100 个元
+素），使用一个使用更大的间隔序列来执行希尔排序算法。以下是输出结果：
+希尔排序前：
+19 19 54 60 66 69 45 40 36 90 22
+93 23 0 88 21 70 4 46 30 69
+75 41 67 93 57 94 21 75 39 50
+17 8 10 43 89 1 0 27 53 43
+51 86 39 86 54 9 49 73 62 56
+84 2 55 60 93 63 28 10 87 95
+59 48 47 52 91 31 74 2 59 1
+35 83 6 49 48 30 85 18 91 73
+90 89 1 22 53 92 84 81 22 91
+34 61 83 70 36 99 80 71 1
+希尔排序后：
+0 0 1 1 1 1 2 2 4 6 8
+9 10 10 17 18 19 19 21 21 22
+22 22 23 27 28 30 30 31 34 35
+36 36 39 39 40 41 43 43 45 46
+47 48 48 49 49 50 51 52 53 53
+54 54 55 56 57 59 59 60 60 61
+62 63 66 67 69 69 70 70 71 73
+73 74 75 75 80 81 83 83 84 84
+85 86 86 87 88 89 89 90 90 91
+91 91 92 93 93 93 94 95 99
+在本章后续介绍到高级排序算法时，还会对希尔排序算法进行比较，到时候我们再来看看
+这个算法。
+计算动态间隔序列
+《算法（第 4 版）》（人民邮电出版社）的合著者 Robert Sedgewick 定义了一个 shellsort()
+函数，在这个函数中可以通过一个公式来对希尔排序用到的间隔序列进行动态计算。
+Sedgewick 的算法是通过下面的代码片段来决定初始间隔值的：
+var N = this.dataStore.length;
+var h = 1;
+while (h < N/3) {
+h = 3 * h + 1;
+}
+间隔值确定好后，这个函数就可以像之前定义的 shellsort() 函数一样运行了，唯一的区
+别是，回到外循环之前的最后一条语句会计算一个新的间隔值：
+h = (h-1)/3;
+例 12-11 给出了这个新的 shellsort() 函数的完整定义，以及它用到的 swap() 函数和用来
+测试的程序。
+<script>
+    //例 12-11　动态计算间隔序列的希尔排序
+    function shellsort1() {
+        var N = this.dataStore.length;
+        var h = 1;
+        while (h < N/3) {
+            h = 3 * h + 1;
+        }
+        while (h >= 1) {
+            for (var i = h; i < N; i++) {
+                for (var j = i; j >= h && this.dataStore[j] < this.dataStore[j-h];
+                     j -= h) {
+                    swap(this.dataStore, j, j-h);
+                }
+            }
+            h = (h-1)/3;
+        }
+    }
+    load("CArray.js")
+    var nums = new CArray(100);
+    nums.setData();
+    print(" 希尔排序前 1：\n");
+    print(nums.toString());
+    nums.shellsort1();
+    print("\n 希尔排序后 1：\n");
+    print(nums.toString());
+</script>
+以上程序的输出结果为：
+希尔排序前 1：
+92 31 5 96 44 88 34 57 44 72 20
+83 73 8 42 82 97 35 60 9 26
+14 77 51 21 57 54 16 97 100 55
+24 86 70 38 91 54 82 76 78 35
+22 11 34 13 37 16 48 83 61 2
+5 1 6 85 100 16 43 74 21 96
+44 90 55 78 33 55 12 52 88 13
+64 69 85 83 73 43 63 1 90 86
+29 96 39 63 41 99 26 94 19 12
+84 86 34 8 100 87 93 81 31
+希尔排序后 1：
+1 1 2 5 5 6 8 8 9 11 12
+12 13 13 14 16 16 16 19 20 21
+21 22 24 26 26 29 31 31 33 34
+34 34 35 35 37 38 39 41 42 43
+43 44 44 44 48 51 52 54 54 55
+55 55 57 57 60 61 63 63 64 69
+70 72 73 73 74 76 77 78 78 81
+82 82 83 83 83 84 85 85 86 86
+86 87 88 88 90 90 91 92 93 94
+96 96 96 97 97 99 100 100 100
+离开希尔排序之前，再来比较一下两个 shellsort() 函数的执行效率。例 12-12 给出的程序
+将用于对比这两个函数的执行时间。在测试中两种算法都将使用 Ciura 序列作为间隔序列。
+<script>
+    //例 12-12　比较 shellsort() 算法
+    load("CArray.js");
+    var nums = new CArray(10000);
+    nums.setData();
+    var start = new Date().getTime();
+    nums.shellsort();
+    var stop = new Date().getTime();
+    var elapsed = stop - start;
+    print(" 硬编码间隔序列的希尔排序消耗的时间为：" + elapsed + " 毫秒。");
+    nums.clear();
+    nums.setData();
+    start = new Date().getTime();
+    nums.shellsort1();
+    stop = new Date().getTime();
+    print(" 动态间隔序列的希尔排序消耗的时间为：" + elapsed + " 毫秒。");
+</script>
+执行以上程序输出的结果为：
+硬编码间隔序列的希尔排序消耗的时间为：3 毫秒。
+动态间隔序列的希尔排序消耗的时间为：3 毫秒。
+它们的耗时是一样的。对 100 000 个数据进行排序的输出结果为：
+硬编码间隔序列的希尔排序消耗的时间为：43 毫秒。
+动态间隔序列的希尔排序消耗的时间为：43 毫秒。
+很明显，这两个希尔排序算法的效率是一样的，因此你可以根据需要随意使用。
+12.3.2　归并排序
+归并排序的命名来自它的实现原理：把一系列排好序的子序列合并成一个大的完整有序序
+列。从理论上讲，这个算法很容易实现。我们需要两个排好序的子数组，然后通过比较数
+据大小，先从最小的数据开始插入，最后合并得到第三个数组。然而，在实际情况中，归
+并排序还有一些问题，当我们用这个算法对一个很大的数据集进行排序时，我们需要相当
+大的空间来合并存储两个子数组。就现在来讲，内存不那么昂贵，空间不是问题，因此值
+得我们去实现一下归并排序，比较它和其他排序算法的执行效率。
+1. 自顶向下的归并排序
+通常来讲（也不一定），归并排序会使用递归的算法来实现。然而，在 JavaScript 中这种方
+式不太可行，因为这个算法的递归深度对它来讲太深了。所以，我们将使用一种非递归的
+排序算法 ｜ 159
+方式来实现这个算法，这种策略称为自底向上的归并排序。
+2. 自底向上的归并排序
+采用非递归或者迭代版本的归并排序是一个自底向上的过程。这个算法首先将数据集分解
+为一组只有一个元素的数组。然后通过创建一组左右子数组将它们慢慢合并起来，每次合
+并都保存一部分排好序的数据，直到最后剩下的这个数组所有的数据都已完美排序。图
+12-4 演示了自底向上的归并排序算法是如何运行的。
+在展示归并排序的 JavaScript 代码之前，我们先来看一个 JavaScript 程序的输出结果，它采
+用自底向上的归并排序算法对一个包含 10 个整数的数组进行排序：
+6,10,1,9,4,8,2,7,3,5
+left array - 6,Infinity
+right array - 10,Infinity
+left array - 1,Infinity
+right array - 9,Infinity
+left array - 4,Infinity
+right array - 8,Infinity
+left array - 2,Infinity
+right array - 7,Infinity
+left array - 3,Infinity
+right array - 5,Infinity
+left array - 6,10,Infinity
+right array - 1,9,Infinity
+left array - 4,8,Infinity
+right array - 2,7,Infinity
+left array - 1,6,9,10,Infinity
+right array - 2,4,7,8,Infinity
+left array - 1,2,4,6,7,8,9,10,Infinity
+right array - 3,5,Infinity
+1,2,3,4,5,6,7,8,9,10
+Infinity 这个值用于标记左子序列或右子序列的结尾。
+一开始每个元素都在左子序列或右子序列中。然后将左右子序列合并，首先每次合并成两
+个元素的子序列，然后合并成四个元素的子序列，3 和 5 除外，它们会一直保留到最后一次
+迭代，那时会把它们合并成右子序列，然后再与最后的左子序列合并成最终的有序数组。
+现在我们知道了自底向上的归并排序的工作原理，例 12-13 就是输出上述结果的代码。
+<script>
+    //例 12-13　JavaScript 实现的自底向上归并排序算法
+    function mergeSort(arr) {
+        if (arr.length < 2) {
+            return;
+        }
+        var step = 1;
+        var left, right;
+        while (step < arr.length) {
+            left = 0;
+            right = step;
+            while (right + step <= arr.length) {
+                mergeArrays(arr, left, left+step, right, right+step);
+                left = right + step;
+                right = left + step;
+            }
+            if (right < arr.length) {
+                mergeArrays(arr, left, left+step, right, arr.length);
+            }
+            step *= 2;
+        }
+    }
+    function mergeArrays(arr, startLeft, stopLeft, startRight, stopRight) {
+        var rightArr = new Array(stopRight - startRight + 1);
+        var leftArr = new Array(stopLeft - startLeft + 1);
+        k = startRight;
+        for (var i = 0; i < (rightArr.length-1); ++i) {
+            rightArr[i] = arr[k];
+            ++k;
+        }
+        k = startLeft;
+        for (var i = 0; i < (leftArr.length-1); ++i) {
+            leftArr[i] = arr[k];
+            ++k;
+        }
+        rightArr[rightArr.length-1] = Infinity; // 哨兵值
+        leftArr[leftArr.length-1] = Infinity; // 哨兵值
+        var m = 0;
+        var n = 0;
+        for (var k = startLeft; k < stopRight; ++k) {
+            if (leftArr[m] <= rightArr[n]) {
+                arr[k] = leftArr[m];
+                m++;
+            }
+            else {
+                arr[k] = rightArr[n];
+                n++;
+            }
+        }
+        print("left array - ", leftArr);
+        print("right array - ", rightArr);
+    }
+    var nums = [6,10,1,9,4,8,2,7,3,5];
+    print(nums);
+    print();
+    mergeSort(nums);
+    print();
+    print(nums);
+//    mergeSort() 函数中的关键点就是 step 这个变量，它用来控制 mergeArrays() 函数生成的
+//    leftArr 和 rightArr 这两个子序列的大小。通过控制子序列的大小，处理排序是比较高效
+//    的，因为它在对小数组进行排序时不需要花费太多时间。合并之所以高效，还有一个原
+//    因，由于未合并的数据已经是排好序的，将它们合并到一个有序数组的过程非常容易。
+</script>
+下一步将归并排序添加到 CArray 类中，并记录它处理大数据集的时间。例 12-14 展示了已
+添加 mergeSort() 和 mergeArrays() 函数的 CArray 类的定义。
+<script>
+    //例 12-14　已添加归并排序的 CArray 类
+    function CArray(numElements) {
+        this.dataStore = [];
+        this.pos = 0;
+        this.gaps = [5,3,1];
+        this.numElements = numElements;
+        this.insert = insert;
+        this.toString = toString;
+        this.clear = clear;
+        this.setData = setData;
+        this.setGaps = setGaps;
+        this.shellsort = shellsort;
+        this.mergeSort = mergeSort;
+        this.mergeArrays = mergeArrays;
+        for (var i = 0; i < numElements; ++i) {
+            this.dataStore[i] = 0;
+        }
+    }
+    // 其他函数的定义在这里
+    function mergeArrays(arr,startLeft, stopLeft, startRight, stopRight) {
+        var rightArr = new Array(stopRight - startRight + 1);
+        var leftArr = new Array(stopLeft - startLeft + 1);
+        k = startRight;
+        for (var i = 0; i < (rightArr.length-1); ++i) {
+            rightArr[i] = arr[k];
+            ++k;
+        }
+        k = startLeft;
+        for (var i = 0; i < (leftArr.length-1); ++i) {
+            leftArr[i] = arr[k];
+            ++k;
+        }
+        rightArr[rightArr.length-1] = Infinity; // 哨兵值
+        leftArr[leftArr.length-1] = Infinity; // 哨兵值
+        var m = 0;
+        var n = 0;
+        for (var k = startLeft; k < stopRight; ++k) {
+            if (leftArr[m] <= rightArr[n]) {
+                arr[k] = leftArr[m];
+                m++;
+            }
+            else {
+                arr[k] = rightArr[n];
+                n++;
+            }
+        }
+        print("left array - ", leftArr);
+        print("right array - ", rightArr);
+    }
+    function mergeSort() {
+        if (this.dataStore.length < 2) {
+            return;
+        }
+        var step = 1;
+        var left, right;
+        while (step < this.dataStore.length) {
+            left = 0;
+            right = step;
+            while (right + step <= this.dataStore.length) {
+                mergeArrays(this.dataStore, left, left+step, right, right+step);
+                left = right + step;
+                right = left + step;
+            }
+            if (right < this.dataStore.length) {
+                mergeArrays(this.dataStore, left, left+step, right, this.dataStore.length);
+            }
+            step *= 2;
+        }
+    }
+    var nums = new CArray(10);
+    nums.setData();
+    print(nums.toString());
+    nums.mergeSort();
+    print(nums.toString());
+</script>
+12.3.3　快速排序
+快速排序是处理大数据集最快的排序算法之一。它是一种分而治之的算法，通过递归的方
+式将数据依次分解为包含较小元素和较大元素的不同子序列。该算法不断重复这个步骤直
+到所有数据都是有序的。
+这个算法首先要在列表中选择一个元素作为基准值（pivot）。数据排序围绕基准值进行，
+将列表中小于基准值的元素移到数组的底部，将大于基准值的元素移到数组的顶部。
+图 12-5 演示了数据围绕基准值进行排序的过程
+快速排序的算法和伪代码
+快速排序的算法如下：
+(1) 选择一个基准元素，将列表分隔成两个子序列；
+(2) 对列表重新排序，将所有小于基准值的元素放在基准值的前面，所有大于基准值的元
+素放在基准值的后面；
+(3) 分别对较小元素的子序列和较大元素的子序列重复步骤 1 和 2。
+这个算法的 JavaScript 程序如下所示：
+function qSort(list) {
+if (list.length == 0) {
+return [];
+}
+var lesser = [];
+var greater = [];
+var pivot = list[0];
+for (var i = 1; i < list.length; i++) {
+if (list[i] < pivot) {
+lesser.push(list[i]);
+} else {
+greater.push(list[i]);
+}
+}
+return qSort(lesser).concat(pivot, qSort(greater));
+}
+这个函数首先检查数组的长度是否为 0。如果是，那么这个数组就不需要任何排序，函数
+直接返回。否则，创建两个数组，一个用来存放比基准值小的元素，另一个用来存放比基
+准值大的元素。这里的基准值取自数组的第一个元素。接下来，这个函数对原始数组的元
+素进行遍历，根据它们与基准值的关系将它们放到合适的数组中。然后对于较小的数组和
+较大的数组分别递归调用这个函数。当递归结束时，再将较大的数组和较小的数组连接起
+来，形成最终的有序数组并将结果返回。
+我们用一些数据来测试这个算法。由于 qSort 函数使用了递归，我们就不使用数组测试平台
+了，而是创建一个由随机数字组成的数组，并直接对它进行排序。例 12-15 展示了这个程序。
+<script>
+    //例 12-15　使用快速排序算法对数据进行排序
+    function qSort(arr)
+    {
+        if (arr.length == 0) {
+            return [];
+        }
+        var left = [];
+        var right = [];
+        var pivot = arr[0];
+        for (var i = 1; i < arr.length; i++) {
+            if (arr[i] < pivot) {
+                left.push(arr[i]);
+            } else {
+                right.push(arr[i]);
+            }
+        }
+        return qSort(left).concat(pivot, qSort(right));
+    }
+    var a = [];
+    for (var i = 0; i < 10; ++i) {
+        a[i] = Math.floor((Math.random()*100)+1);
+    }
+    print(a);
+    print();
+    print(qSort(a));
+//    以上程序的输出结果为：
+//    68,80,12,80,95,70,79,27,88,93
+//    12,27,68,70,79,80,80,88,93,95
+//    快速排序算法非常适用于大型数据集合；在处理小数据集时性能反而会下降。
+</script>
+为了更好地演示快速排序是如何运行的，以下程序将对当前选中的基准值及如何围绕基准
+进行数据排序的部分进行突出显示：
+<script>
+    function qSort(arr)
+    {
+        if (arr.length == 0) {
+            return [];
+        }
+        var left = [];
+        var right = [];
+        var pivot = arr[0];
+        for (var i = 1; i < arr.length; i++) {
+            print(" 基准值：" + pivot + " 当前元素：" + arr[i]);
+            if (arr[i] < pivot) {
+                print(" 移动 " + arr[i] + " 到左边 ");
+                left.push(arr[i]);
+            } else {
+                print(" 移动 " + arr[i] + " 到右边 ");
+                right.push(arr[i]);
+            }
+        }
+        return qSort(left).concat(pivot, qSort(right));
+    }
+    var a = [];
+    for (var i = 0; i < 10; ++i) {
+        a[i] = Math.floor((Math.random()*100)+1);
+    }
+    print(a);
+    print();
+    print(qSort(a));
+</script>
+以上程序的输出结果为：
+9,3,93,9,65,94,50,90,12,65
+基准值：9 当前元素：3
+移动 3 到左边
+基准值：9 当前元素：93
+移动 93 到右边
+基准值：9 当前元素：9
+移动 9 到右边
+基准值：9 当前元素：65
+移动 65 到右边
+基准值：9 当前元素：94
+移动 94 到右边
+基准值：9 当前元素：50
+移动 50 到右边
+基准值：9 当前元素：90
+移动 90 到右边
+基准值：9 当前元素：12
+移动 12 到右边
+基准值：9 当前元素：65
+移动 65 到右边
+基准值：93 当前元素：9
+移动 9 到左边
+基准值：93 当前元素：65
+移动 65 到左边
+基准值：93 当前元素：94
+移动 94 到右边
+基准值：93 当前元素：50
+移动 50 到左边
+基准值：93 当前元素：90
+移动 90 到左边
+基准值：93 当前元素：12
+移动 12 到左边
+基准值：93 当前元素：65
+移动 65 到左边
+基准值：9 当前元素：65
+移动 65 到右边
+基准值：9 当前元素：50
+移动 50 到右边
+基准值：9 当前元素：90
+移动 90 到右边
+基准值：9 当前元素：12
+移动 12 到右边
+基准值：9 当前元素：65
+移动 65 到右边
+基准值：65 当前元素：50
+移动 50 到左边
+基准值：65 当前元素：90
+移动 90 到右边
+基准值：65 当前元素：12
+移动 12 到左边
+基准值：65 当前元素：65
+移动 65 到右边
+基准值：50 当前元素：12
+移动 12 到左边
+基准值：90 当前元素：65
+移动 65 到左边
+3,9,9,12,50,65,65,90,93,94
+</body>
+</html>
